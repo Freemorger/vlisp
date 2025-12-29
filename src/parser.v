@@ -3,8 +3,8 @@ module main
 struct Parser {
     toks []Token
 mut:
-    pos int 
-    cur_line int 
+    pos int
+    cur_line int
 }
 
 pub fn (mut p Parser) parse_everything() ![]AstNode {
@@ -12,12 +12,12 @@ pub fn (mut p Parser) parse_everything() ![]AstNode {
 
     for p.pos < p.toks.len {
         if p.toks[p.pos].ttype == .rpar {
-            break  
+            break
         }
 
         p.cur_line = p.toks[p.pos].line;
         expr := p.parse_expr(p.toks)!;
-        res << expr 
+        res << expr
         if expr.atype == AstN.breakexpr {
             break
         }
@@ -60,9 +60,9 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
         }
         .lpar {
             p.pos += 1;
-            
+
             expr := p.parse_expr(toks)!;
-            
+
             if !((p.pos < toks.len) && (toks[p.pos].ttype == Tok.rpar)) {
                 return error("Expected `)`, got ${toks[p.pos]}")
             }
@@ -84,7 +84,7 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
         .strlit {
             p.pos += 1;
             return AstNode {
-                atype: AstN.strlit 
+                atype: AstN.strlit
                 left: tv_to_av(cur.value)
             }
         }
@@ -92,21 +92,33 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
             p.pos += 1;
             left := p.parse_expr(toks)!;
             right := p.parse_expr(toks)!;
-            
+
             return AstNode {
                 atype: AstN.addition
-                left: left 
+                left: left
                 right: right
             }
         }
+		.minus {
+			// TODO: unary minus handling
+			p.pos += 1;
+			left := p.parse_expr(toks)!;
+			right := p.parse_expr(toks)!;
+
+			return AstNode {
+				atype: AstN.subtraction
+				left: left
+				right: right
+			}
+		}
         .asterisk {
             p.pos += 1;
             left := p.parse_expr(toks)!;
             right := p.parse_expr(toks)!;
-            
+
             return AstNode {
                 atype: AstN.multiply
-                left: left 
+                left: left
                 right: right
             }
         }
@@ -114,16 +126,16 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
             p.pos += 1;
             left := p.parse_expr(toks)!;
             right := p.parse_expr(toks)!;
-            
+
             return AstNode {
                 atype: AstN.divide
-                left: left 
+                left: left
                 right: right
             }
         }
 
 
-        else {} 
+        else {}
     }
     return error("Unexpected ${cur}")
 }
@@ -154,7 +166,7 @@ pub fn (av AValue) as_str() string {
 }
 
 pub struct AstNode {
-    atype AstN 
+    atype AstN
     left AValue
     right AValue
 }
@@ -171,6 +183,7 @@ pub enum AstN {
 
     addition
     subtraction
+	negation
     multiply
     divide
 }

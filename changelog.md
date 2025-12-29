@@ -1,0 +1,4 @@
+- division by zero error
+- update readme
+- changed `input()` to readline module for better repl
+- removed .v-analyzer dir (no need)

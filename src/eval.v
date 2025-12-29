@@ -17,10 +17,10 @@ pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
         .addition {
             e.eval(at_as_astn(ast_node.left))!;
             e.eval(at_as_astn(ast_node.right))!;
-            
+
             left := e.stack.pop();
             right := e.stack.pop();
-            
+
             if left is int && right is int {
                 e.stack << right + left;
             } else if left is string && right is string {
@@ -32,23 +32,35 @@ pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
         .subtraction {
             e.eval(at_as_astn(ast_node.left))!;
             e.eval(at_as_astn(ast_node.right))!;
-            
+
             left := e.stack.pop();
             right := e.stack.pop();
-            
+
             if left is int && right is int {
                 e.stack << right - left;
             } else {
-                println("Could not sub ${left} and ${right}");
+                eprintln("Could not sub ${left} and ${right}");
             }
         }
+		.negation {
+			e.eval(at_as_astn(ast_node.left))!;
+
+			left := e.stack.pop();
+
+			if left is int {
+				e.stack << 0 - left // for some reason, c compilation fails
+									// with just -left
+			} else {
+				eprintln("Could not negate ${left}");
+			}
+		}
         .multiply {
             e.eval(at_as_astn(ast_node.left))!;
             e.eval(at_as_astn(ast_node.right))!;
-            
+
             left := e.stack.pop();
             right := e.stack.pop();
-            
+
             if left is int && right is int {
                 e.stack << right * left;
             } else {
@@ -58,11 +70,14 @@ pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
         .divide {
             e.eval(at_as_astn(ast_node.left))!;
             e.eval(at_as_astn(ast_node.right))!;
-            
+
             left := e.stack.pop();
             right := e.stack.pop();
-            
+
             if left is int && right is int {
+				if left == 0 {
+					eprintln("Could not divide by zero");
+				}
                 e.stack << right / left;
             } else {
                 println("Could not div ${left} and ${right}");
@@ -70,11 +85,11 @@ pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
         }
         .print {
             e.eval(at_as_astn(ast_node.left))!;
-            
+
             println("${e.stack.pop().as_str()}");
         }
         .exit {
-            return true 
+            return true
         }
         else {}
     }
@@ -83,16 +98,16 @@ pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
 
 fn at_as_astn(at AValue) AstNode {
     if at is AstNode {
-        return at 
+        return at
     } else if at is int {
         return AstNode {
-            atype: AstN.intval 
-            left: at 
+            atype: AstN.intval
+            left: at
         }
     } else if at is string {
         return AstNode {
-            atype: AstN.strlit 
-            left: at 
+            atype: AstN.strlit
+            left: at
         }
     }
     panic("unreachable at at_as_astn")

@@ -1,6 +1,7 @@
 module main
 import cli
 import os
+import readline
 
 fn main() {
 	mut app := cli.Command {
@@ -50,8 +51,11 @@ fn run_file(cmd cli.Command) ! {
 }
 
 fn repl(cmd cli.Command) ! {
-	for true {
-		inp := os.input('>> ');
+	mut r := readline.Readline{}
+
+	for {
+		inp := r.read_line(">> ") or { break }
+		if inp.trim_space() == '' { continue }
 
 		toks := lex(inp);
 
