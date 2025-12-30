@@ -5,6 +5,7 @@ struct Parser {
 mut:
     pos int
     cur_line int
+	fold_lvl int
 }
 
 pub fn (mut p Parser) parse_everything() ![]AstNode {
@@ -41,6 +42,14 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
             p.pos += 1;
             if cur.value is string {
                 match cur.value {
+					"neg" {
+						left := p.parse_expr(toks)!;
+
+						return AstNode {
+							atype: AstN.negation
+							left: left
+						}
+					}
                     "print" {
                         left := p.parse_expr(toks)!;
 
@@ -58,13 +67,21 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
                 }
             }
         }
-        .lpar {
+    	.lpar {
             p.pos += 1;
+			last_fold_lvl := p.fold_lvl;
+			p.fold_lvl += 1;
 
             expr := p.parse_expr(toks)!;
 
-            if !((p.pos < toks.len) && (toks[p.pos].ttype == Tok.rpar)) {
-                return error("Expected `)`, got ${toks[p.pos]}")
+			is_rpar := p.pos < toks.len && toks[p.pos].ttype == Tok.rpar;
+			if last_fold_lvl != p.fold_lvl && !is_rpar {
+				println("While parsing ${expr}:");
+				if p.pos < toks.len {
+					return error("Expected `)`, found EOF")
+				}
+				return error("Fold level mismatch: expected ${last_fold_lvl},\
+					found ${p.fold_lvl}")
             }
 
             p.pos += 1;
@@ -100,7 +117,6 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
             }
         }
 		.minus {
-			// TODO: unary minus handling
 			p.pos += 1;
 			left := p.parse_expr(toks)!;
 			right := p.parse_expr(toks)!;

@@ -1,1 +1,2 @@
-- negation (unary minus)
+- variables
+- goto

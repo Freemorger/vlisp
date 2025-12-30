@@ -56,8 +56,24 @@ pub fn lex(input string) []Token {
 				pos += 1;
 			}
 			`-` {
-				res << Token{ttype: Tok.minus, line: line_ctr}
-				pos += 1;
+				if (pos + 1) < input.len && input[pos + 1].is_digit() {
+					start := pos + 1;
+					mut end := pos;
+					for end < input.len {
+						end += 1;
+						if !input[end].is_digit() {
+							break
+						}
+					}
+					num_s := "-${input[start..end]}";
+					res_n := num_s.int();
+
+					res << Token{ttype: Tok.intval, value: res_n, line: line_ctr}
+					pos = end;
+				} else {
+					res << Token{ttype: Tok.minus, line: line_ctr}
+					pos += 1;
+				}
 			}
 			`*` {
 				res << Token{ttype: Tok.asterisk, line: line_ctr}
@@ -107,6 +123,7 @@ fn is_whitespace(ch u8) bool {
 
 fn try_kword(s string, line int) Token {
 	return match s {
+		"neg" {Token{ttype: Tok.keyword, value: s}}
 		"print" {Token{ttype: Tok.keyword, value: s}}
 		"exit" {Token{ttype: Tok.keyword, value: s}}
 		else {Token{ttype: Tok.idt, value: s}}

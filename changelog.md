@@ -2,3 +2,4 @@
 - update readme
 - changed `input()` to readline module for better repl
 - removed .v-analyzer dir (no need)
+- unary minus, finally (see `test.lisp`)

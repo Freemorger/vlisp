@@ -46,6 +46,9 @@ fn run_file(cmd cli.Command) ! {
 		ast := parser.parse_everything()!;
 
 		mut ast_ev := AstEvaler{};
+		if ast.len < 1 {
+			continue
+		}
 		ast_ev.eval(ast[0])!;
 	}
 }
