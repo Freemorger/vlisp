@@ -43,6 +43,11 @@ pub fn lex(input string) []Token {
 				line_ctr = line_ctr + 1;
 				pos += 1;
 			}
+			`;` {
+				for pos < n && input[pos] != `\n` {
+					pos += 1;
+				}
+			}
 			`(` {
 				res << Token{ttype: Tok.lpar, line: line_ctr}
 				pos += 1;
@@ -85,6 +90,7 @@ pub fn lex(input string) []Token {
 			}
 			`"` {
 				start := pos;
+				start_line := line_ctr;   // <-- capture before consuming the body
 				pos += 1;
 				for pos < n && input[pos] != `"` {
 					if input[pos] == `\n` {
@@ -96,7 +102,7 @@ pub fn lex(input string) []Token {
 					break
 				}
 				literal := input[start + 1..pos];
-				res << Token{ttype: Tok.strlit, value: literal, line: line_ctr}
+				res << Token{ttype: Tok.strlit, value: literal, line: start_line}   // <-- use it here
 				pos += 1;
 			}
 			else {
@@ -123,9 +129,12 @@ fn is_whitespace(ch u8) bool {
 
 fn try_kword(s string, line int) Token {
 	return match s {
-		"neg" {Token{ttype: Tok.keyword, value: s}}
-		"print" {Token{ttype: Tok.keyword, value: s}}
-		"exit" {Token{ttype: Tok.keyword, value: s}}
-		else {Token{ttype: Tok.idt, value: s}}
+		"neg"   {Token{ttype: Tok.keyword, value: s, line: line}}
+		"print" {Token{ttype: Tok.keyword, value: s, line: line}}
+		"exit"  {Token{ttype: Tok.keyword, value: s, line: line}}
+		"def"   {Token{ttype: Tok.keyword, value: s, line: line}}
+		"defvar"{Token{ttype: Tok.keyword, value: s, line: line}}
+		"setf"  {Token{ttype: Tok.keyword, value: s, line: line}}
+		else {Token{ttype: Tok.idt, value: s, line: line}}
 	}
 }

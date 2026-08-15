@@ -27,6 +27,28 @@ pub fn (mut p Parser) parse_everything() ![]AstNode {
     return res
 }
 
+fn (mut p Parser) expect_idt(toks []Token) !AstNode {
+	if p.pos >= toks.len {
+        return error("Unexpected EOF\n")
+    }
+
+    cur := toks[p.pos];
+    match cur.ttype {
+		.idt {
+			p.pos += 1;
+			return AstNode {
+				atype: AstN.idt
+				left:  tv_to_av(cur.value)
+				line: cur.line
+			}
+		}
+		else {
+			panic("Expected identifier, found ${cur}");
+		}
+	}
+    return error("Unexpected ${cur}")
+}
+
 fn (mut p Parser) parse_expr(toks []Token) !AstNode {
     return p.parse_prefix(toks)
 }
@@ -48,25 +70,56 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
 						return AstNode {
 							atype: AstN.negation
 							left: left
+							line: cur.line
 						}
 					}
                     "print" {
                         left := p.parse_expr(toks)!;
 
                         return AstNode {
-                                atype: AstN.print
-                                left: left
+                            atype: AstN.print
+                            left: left
+							line: cur.line
                         }
                     }
                     "exit" {
                         return AstNode {
                             atype: AstN.exit
+							line: cur.line
                         }
                     }
+					"def", "defvar", "setf" {
+						name := p.expect_idt(toks)!;
+						val  := p.parse_expr(toks)!;
+
+						atp := match cur.value {
+							"def" 	 {AstN.def}
+							"defvar" {AstN.defvar}
+							"setf" 	 {AstN.setf}
+							else {
+								panic("Internal error: got curval ${cur.value}")
+							}
+						};
+
+						return AstNode {
+							atype: atp
+							left:  name
+							right: val
+							line:  cur.line
+						}
+					}
                     else {}
                 }
             }
         }
+		.idt {
+			p.pos += 1;
+			return AstNode {
+				atype: AstN.var
+				left:  tv_to_av(cur.value)
+				line:  cur.line
+			}
+		}
     	.lpar {
             p.pos += 1;
 			last_fold_lvl := p.fold_lvl;
@@ -89,6 +142,7 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
         }
         .rpar {
             return AstNode {
+				line: cur.line
             }
         }
         .intval {
@@ -96,6 +150,7 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
             return AstNode {
                 atype: AstN.intval
                 left: tv_to_av(cur.value)
+				line: cur.line
             }
         }
         .strlit {
@@ -103,6 +158,7 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
             return AstNode {
                 atype: AstN.strlit
                 left: tv_to_av(cur.value)
+				line: cur.line
             }
         }
         .plus {
@@ -112,8 +168,9 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
 
             return AstNode {
                 atype: AstN.addition
-                left: left
+                left:  left
                 right: right
+				line:  cur.line
             }
         }
 		.minus {
@@ -123,8 +180,9 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
 
 			return AstNode {
 				atype: AstN.subtraction
-				left: left
+				left:  left
 				right: right
+				line:  cur.line
 			}
 		}
         .asterisk {
@@ -134,8 +192,9 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
 
             return AstNode {
                 atype: AstN.multiply
-                left: left
+                left:  left
                 right: right
+				line:  cur.line
             }
         }
         .slash {
@@ -145,13 +204,12 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
 
             return AstNode {
                 atype: AstN.divide
-                left: left
+                left:  left
                 right: right
+				line:  cur.line
             }
         }
-
-
-        else {}
+        // else {}
     }
     return error("Unexpected ${cur}")
 }
@@ -185,6 +243,7 @@ pub struct AstNode {
     atype AstN
     left AValue
     right AValue
+	line int
 }
 
 pub enum AstN {
@@ -197,9 +256,16 @@ pub enum AstN {
     intval
     strlit
 
+	idt
+	var
+
     addition
     subtraction
 	negation
     multiply
     divide
+
+	def
+	defvar
+	setf
 }

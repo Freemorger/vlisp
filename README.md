@@ -8,7 +8,7 @@ https://github.com/Freemorger/vlisp.git
 # Go to cloned repo directory:
 cd vlisp
 # Build it:
-v .
+v -o vlisp src/
 # Finally, run it. (next block)
 ```
 ## Running

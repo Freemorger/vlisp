@@ -1,6 +1,10 @@
-(print (-4))
-(print (- (-4) 2))
-(print (* 2 (-4)))
+(def x 14)
+(def x 15)
 
-"Use `neg` keyword to negate expressions"
-(print neg (+ 5 4))
+; (setf z 148) ; error
+
+(setf x 17)
+
+(defvar x 16)
+
+(print x)
