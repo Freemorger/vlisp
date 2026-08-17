@@ -1,10 +1,16 @@
-(def x 14)
-(def x 15)
+; (let (x 14) (print (+ x 4)))
 
-; (setf z 148) ; error
+(defvar x 10)
 
-(setf x 17)
+(let (x 20)
+  (let (x 25) (
+    print (* x 4) ; 100
+    )
+  )
+)
 
-(defvar x 16)
+(print x) ; 10
 
-(print x)
+(print 3.14)
+
+(print (/ 4.0 2)) ; 2.0

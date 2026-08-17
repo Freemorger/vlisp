@@ -1,5 +1,6 @@
 # now
-- `let`
+- conditionals maybe
 # next
-- loops/conds maybe
+- loops
 # later
+- multiply string by int

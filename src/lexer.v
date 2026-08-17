@@ -5,6 +5,7 @@ pub enum Tok {
 	keyword
 
 	intval
+	floatval
 	strlit
 
 	lpar
@@ -17,7 +18,7 @@ pub enum Tok {
 	idt
 }
 
-pub type TValue = int | string
+pub type TValue = int | f64 | string
 
 pub struct Token {
 pub:
@@ -112,6 +113,15 @@ pub fn lex(input string) []Token {
 				}
 				word := input[start..pos];
 
+				if word.contains(".") {
+					floatv := strconv.atof64(word) or {
+						res << try_kword(word, line_ctr);
+						continue
+					}
+					res << Token {ttype: Tok.floatval, value: floatv, line: line_ctr}
+					continue
+				}
+
 				intv := strconv.atoi(word) or {
 					res << try_kword(word, line_ctr)
 					continue
@@ -128,13 +138,9 @@ fn is_whitespace(ch u8) bool {
 }
 
 fn try_kword(s string, line int) Token {
-	return match s {
-		"neg"   {Token{ttype: Tok.keyword, value: s, line: line}}
-		"print" {Token{ttype: Tok.keyword, value: s, line: line}}
-		"exit"  {Token{ttype: Tok.keyword, value: s, line: line}}
-		"def"   {Token{ttype: Tok.keyword, value: s, line: line}}
-		"defvar"{Token{ttype: Tok.keyword, value: s, line: line}}
-		"setf"  {Token{ttype: Tok.keyword, value: s, line: line}}
-		else {Token{ttype: Tok.idt, value: s, line: line}}
-	}
+	keywords := ['neg', 'print', 'exit', 'def', 'defvar', 'setf', 'let']
+	ttype    := if s in keywords { Tok.keyword } else { Tok.idt }
+
+	return Token{ttype: ttype, value: s, line: line}
 }
+

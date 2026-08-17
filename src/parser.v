@@ -108,6 +108,17 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
 							line:  cur.line
 						}
 					}
+					"let" {
+						nvbind 	  := p.parse_nmvalbind(toks)!;
+						rhs       := p.parse_expr(toks)!;
+
+						return AstNode {
+							atype: AstN.let
+							left:  nvbind
+							right: rhs
+							line:  cur.line
+						}
+					}
                     else {}
                 }
             }
@@ -153,6 +164,14 @@ fn (mut p Parser) parse_prefix(toks []Token) !AstNode {
 				line: cur.line
             }
         }
+		.floatval {
+			p.pos += 1;
+			return AstNode {
+				atype: AstN.floatval
+				left:  tv_to_av(cur.value)
+				line:  cur.line
+			}
+		}
         .strlit {
             p.pos += 1;
             return AstNode {
@@ -221,21 +240,61 @@ fn (mut p Parser) peek() !Token {
     return p.toks[p.pos + 1]
 }
 
-fn tv_to_av(tv TValue) AValue {
-    if tv is int {
-        return tv
-    } else if tv is string {
-        return tv
-    }
-    return 0 // unreachable
+fn (mut p Parser) expect(ttype Tok) ! {
+	if p.pos + 1 >= p.toks.len {
+		return error("Expect is out of bounds\n");
+	}
+	cur   := p.toks[p.pos];
+	p.pos += 1;
+	if cur.ttype != ttype {
+		return error("Expected ${ttype}, got ${cur.ttype}");
+	}
 }
 
-pub type AValue = AstNode | int | string
+/// Parse a name-value bind, e.g. `(x 15)`
+fn (mut p Parser) parse_nmvalbind(toks []Token) !AstNode {
+	p.expect(.lpar)!;
+
+	nm   := p.expect_idt(toks)!;
+	line := nm.line;
+
+	rhs := p.parse_expr(toks)!;
+
+	p.expect(.rpar)!;
+
+	return AstNode {
+		atype: .nvbind
+		left:  nm
+		right: rhs
+		line:  line
+	}
+}
+
+fn tv_to_av(tv TValue) AValue {
+	return match tv {
+		int, f64, string { tv }
+		// else { 0 }
+	}
+}
+
+
+pub type AValue = AstNode | int | f64 | string
 pub fn (av AValue) as_str() string {
     match av {
         int {return av.str()}
+		f64 {return av.str()}
         string {return av}
-        else {return "$av"}
+        AstNode {match av.atype {
+			.idt {
+				return av.left.as_str();
+			}
+			.strlit {
+				return av.left.as_str();
+			}
+			else {
+				return av.str();
+			}
+		}}
     }
 }
 
@@ -254,6 +313,7 @@ pub enum AstN {
     print
 
     intval
+	floatval
     strlit
 
 	idt
@@ -268,4 +328,7 @@ pub enum AstN {
 	def
 	defvar
 	setf
+	let
+
+	nvbind // name-value bind
 }

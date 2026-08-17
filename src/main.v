@@ -7,7 +7,7 @@ fn main() {
 	mut app := cli.Command {
 		name: 'vlisp'
 		description: 'Simple lisp interpreter written in Vlang'
-		version: '0.0.2'
+		version: '0.0.3'
 		execute: fn (cmd cli.Command) ! {
 			println("Welcome to vlisp! Please specify command or run `vlisp help`");
 
@@ -39,7 +39,7 @@ fn run_file(cmd cli.Command) ! {
 	}
 	fname := cmd.args[0];
 	contents := os.read_file(fname)!;
-	mut ast_ev := AstEvaler{};
+	mut ast_ev := new_astev();
 
 	toks := lex(contents);
 	mut parser := Parser{toks: toks}
@@ -55,7 +55,7 @@ fn run_file(cmd cli.Command) ! {
 
 fn repl(cmd cli.Command) ! {
 	mut r := readline.Readline{}
-	mut ast_ev := AstEvaler{};
+	mut ast_ev := new_astev();
 
 	for {
 		inp := r.read_line(">> ") or { break }
