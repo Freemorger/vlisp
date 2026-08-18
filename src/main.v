@@ -7,7 +7,7 @@ fn main() {
 	mut app := cli.Command {
 		name: 'vlisp'
 		description: 'Simple lisp interpreter written in Vlang'
-		version: '0.0.3'
+		version: '0.0.4'
 		execute: fn (cmd cli.Command) ! {
 			println("Welcome to vlisp! Please specify command or run `vlisp help`");
 
@@ -46,8 +46,8 @@ fn run_file(cmd cli.Command) ! {
 	asts := parser.parse_everything()!;
 
 	for ast in asts {
-		should_exit := ast_ev.eval(ast)!;
-		if should_exit {
+		eres := ast_ev.eval(ast)!;
+		if eres.exit || eres.had_error {
 			break
 		}
 	}
@@ -66,10 +66,17 @@ fn repl(cmd cli.Command) ! {
 		mut parser := Parser{toks: toks}
 		ast := parser.parse_everything()!;
 
-		should_exit := ast_ev.eval(ast[0])!;
+		eres := ast_ev.eval(ast[0])!;
 
-		if should_exit {
+		if eres.exit {
 			break
+		}
+
+		if ast_ev.stack.len > 0 {
+			val := ast_ev.stack.last();
+			if !(val is AstNode) {
+				println("${val.as_str()}");
+			}
 		}
 	}
 }

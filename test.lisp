@@ -1,4 +1,4 @@
-; (let (x 14) (print (+ x 4)))
+(let (x 14) (print (+ x 4))) ; 18
 
 (defvar x 10)
 

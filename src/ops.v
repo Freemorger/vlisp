@@ -5,7 +5,9 @@ pub fn (mut e AstEvaler) binary_op(handler fn (lhs AValue, rhs AValue) !AValue) 
 	lhs := e.stack.pop();
 
 	common := higher_common(lhs, rhs) or {
-		return error("Expected numeric values, got LHS = ${lhs}, RHS = ${rhs}")
+		return error(
+			"Expected numeric values, got LHS = ${lhs.as_str()}, RHS = ${rhs.as_str()}
+		")
 	};
 
 	lhs_c := av_into_nt(lhs, common)!;

@@ -1,7 +1,5 @@
-v0.0.3:
-- `let` operator for local variables
-- variable maps stack
-- float values (represented as f64)
-- operations between int and float, dynamic types
-- some refactor, including vars and blah blah blah
-
+v0.0.4:
+- repl now prints value as normal repl
+- error rework, now it also wont crash repl
+- renamed `NumericType` into `VlType`
+- some refactor ig

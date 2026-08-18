@@ -43,34 +43,52 @@ pub fn (mut e AstEvaler) is_var(name string) (bool, int) {
 	return false, 0
 }
 
+pub struct EvalResult {
+pub mut:
+	had_error bool
+	exit bool
+}
 
 /// retval bool - should_exit
-pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
-	line := ast_node.line;
+pub fn (mut e AstEvaler) eval(ast_node AstNode) !EvalResult {
+	mut eres := EvalResult{};
+	line     := ast_node.line;
     match ast_node.atype {
         .intval, .floatval, .strlit {
             e.stack << ast_node.left
         }
         .addition {
-            e.eval(at_as_astn(ast_node.left))!
-            e.eval(at_as_astn(ast_node.right))!
+            if e.eval(at_as_astn(ast_node.left))!.had_error  {
+				eres.had_error = true; return eres
+			}
+            if e.eval(at_as_astn(ast_node.right))!.had_error  {
+				eres.had_error = true; return eres
+			}
 
 			e.binary_op(op_add) or {
 				vlisp_error(line, "${err.msg()}");
-				return true
+				eres.had_error = true;
+				return eres
 			};
         }
         .subtraction {
-            e.eval(at_as_astn(ast_node.left))!
-            e.eval(at_as_astn(ast_node.right))!
+            if e.eval(at_as_astn(ast_node.left))!.had_error  {
+				eres.had_error = true; return eres
+			}
+            if e.eval(at_as_astn(ast_node.right))!.had_error  {
+				eres.had_error = true; return eres
+			}
 
             e.binary_op(op_sub) or {
 				vlisp_error(line, "${err.msg()}");
-				return true
+				eres.had_error = true;
+				return eres
 			};
         }
 		.negation {
-			e.eval(at_as_astn(ast_node.left))!
+			if e.eval(at_as_astn(ast_node.left))!.had_error  {
+				eres.had_error = true; return eres
+			}
 
 			left := e.stack.pop()
 
@@ -79,35 +97,50 @@ pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
 				f64 { e.stack << 0-left }
 				else {
 					vlisp_error(line, 'Could not negate ${left}')
-					return true
+					eres.had_error = true;
+					return eres
 				}
 			}
 		}
         .multiply {
-            e.eval(at_as_astn(ast_node.left))!
-            e.eval(at_as_astn(ast_node.right))!
+            if e.eval(at_as_astn(ast_node.left))!.had_error  {
+				eres.had_error = true; return eres
+			}
+            if e.eval(at_as_astn(ast_node.right))!.had_error  {
+				eres.had_error = true; return eres
+			}
 
             e.binary_op(op_mul) or {
 				vlisp_error(line, "${err.msg()}");
-				return true
+				eres.had_error = true;
+				return eres
 			};
         }
         .divide {
-            e.eval(at_as_astn(ast_node.left))!
-            e.eval(at_as_astn(ast_node.right))!
+            if e.eval(at_as_astn(ast_node.left))!.had_error  {
+				eres.had_error = true; return eres
+			}
+            if e.eval(at_as_astn(ast_node.right))!.had_error  {
+				eres.had_error = true; return eres
+			}
 
             e.binary_op(op_div) or {
 				vlisp_error(line, "${err.msg()}");
-				return true
+				eres.had_error = true;
+				return eres
 			};
         }
         .print {
-            e.eval(at_as_astn(ast_node.left))!;
+            if e.eval(at_as_astn(ast_node.left))!.had_error {
+				eres.had_error = true;
+				return eres
+			}
 
             println("${e.stack.pop().as_str()}");
         }
         .exit {
-            return true
+			eres.exit = true;
+            return eres
         }
 		.idt {
 			e.stack << ast_node.left
@@ -121,7 +154,8 @@ pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
 			present, _ := e.is_var(nm);
 			if ast_node.atype == .setf && !(present) {
 				vlisp_error(line, "Undefined: ${nm}");
-				return true
+				eres.had_error = true;
+				return eres
 			}
 			if !(ast_node.atype == .defvar && present) {
 				e.vars[e.cur_nest][nm] = val;
@@ -153,17 +187,19 @@ pub fn (mut e AstEvaler) eval(ast_node AstNode) !bool {
 			if !prsnt {
 				vlisp_error(line, "Undefined: ${nm}");
 				e.stack << AstNode{};
-				return true
+				eres.had_error = true;
+				return eres
 			}
 
 			e.stack << e.vars[nest][nm] or {
 				vlisp_error(line, "Unreachable undefined: ${nm}");
-				return true
+				eres.had_error = true;
+				return eres
 			};
 		}
         else {}
     }
-    return false
+    return eres
 }
 
 fn at_as_astn(at AValue) AstNode {
